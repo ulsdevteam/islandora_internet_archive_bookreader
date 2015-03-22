@@ -30,6 +30,9 @@ function template_preprocess_islandora_internet_archive_bookreader(array &$varia
       )),
     );
     $pages[] = $info + $addendum;
+/* =======
+    $pages[] = $info + array('pid' => $page_pid);
+>>>>>>> 59d96c2... more ajax-y and callback-y, less resource hogg-y */
   }
 
   global $base_url;

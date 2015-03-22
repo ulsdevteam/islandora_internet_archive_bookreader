@@ -239,6 +239,17 @@
       else {
         return this.getDjatokaUri(this.settings.pages[index].uri);
       }
+/*
+      var resource_uri = null;
+      $.ajax({
+        url: this.settings.tokenUri.replace('PID', this.settings.pages[index].pid),
+        async: false,
+        success: function(data, textStatus, jqXHR) {
+          resource_uri = data;
+        }
+      });
+      return this.getDjatokaUri(resource_uri);
+*/
     }
   }
 
