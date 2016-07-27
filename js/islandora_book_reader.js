@@ -854,9 +854,12 @@
       newHash = '#' + replaceAll(',','/',param_data.toString());
     }
 
+    var preventHistory = Drupal.settings.islandoraInternetArchiveBookReader.preventHistory;
     // End bug fix.
-    if (this.oldLocationHash != newHash) {
-      window.location.hash = newHash;
+    if (!preventHistory) {
+      if (this.oldLocationHash != newHash) {
+        window.location.hash = newHash;
+      }
     }
 
     // This is the variable checked in the timer.  Only user-generated changes
