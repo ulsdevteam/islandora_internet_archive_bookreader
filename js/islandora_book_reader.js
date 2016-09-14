@@ -177,7 +177,7 @@
     //Do some sanitation on that base uri.
     //Since it comes from an admin form, let's make sure there's a '/' at the
     //end of it.
-    if (base_uri.charAt(base_uri.length) != '/') {
+    if (base_uri.charAt(base_uri.length - 1) != '/') {
       base_uri += '/';
     }
     var params = $.param({
