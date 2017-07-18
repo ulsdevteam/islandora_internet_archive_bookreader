@@ -726,7 +726,14 @@
    */
   IslandoraBookReader.prototype.buildShareDiv = function(jShareDiv) {
     var pageView = document.location + '';
+    // Remove the search part of the URL if present.
+    pageView = pageView.replace(/\/from_search\/.*/);
     var bookView = (pageView + '').replace(/#.*/,'');
+    // Add the page 1 fragment if not present.
+    if (pageView == bookView) {
+        pageView = pageView + '#page/1/mode/1up';
+    }
+    
     var self = this;
     var jForm = $([
         '<p>' + Drupal.t('Copy and paste one of these options to share this @content_type elsewhere.', {'@content_type': this.content_type}) + '</p>',
@@ -847,12 +854,17 @@
       index = 1;
     }
 
+
     var newHash = '#' + this.fragmentFromParams(this.paramsFromCurrent());
     if (page_string != this.currentIndex() && page_string) {
       var param_data = this.fragmentFromParams(this.paramsFromCurrent()).split("/");
       param_data[1] = index;
       newHash = '#' + replaceAll(',','/',param_data.toString());
     }
+    
+    // Update the share div with the current page's url fragment hash value.
+    var pageView = (document.location + '').replace(/\/from_search\/.*/, "/viewer").replace(/#.*/,'');
+    $('#pageview').val(pageView + newHash);
 
     // End bug fix.
     if (this.oldLocationHash != newHash) {
