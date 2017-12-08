@@ -36,11 +36,12 @@ function islandora_internet_archive_bookreader_dimensions_callback(AbstractObjec
  *   The page object whose OCR data-stream will be used for display.
  */
 function islandora_internet_archive_bookreader_text_callback(AbstractObject $object) {
-  $ocr_exists = isset($object['OCR']);
-  $accessible_ocr = isset($object['OCR']) && islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['OCR']);
+  $ocr_exists =(isset($object['OCR']) || isset($object['HOCR']));
+  $accessible_ocr = ((isset($object['OCR']) && islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['OCR'])) || 
+     (isset($object['HOCR']) && islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['HOCR'])));
   echo $ocr_exists ? (
     $accessible_ocr ?
-      htmlspecialchars($object['OCR']->content) :
+      (isset($object['OCR']) ? htmlspecialchars($object['OCR']->content) : strip_tags($object['HOCR']->content)) :
       t('You do not have permission to view the OCR for this page.')) :
     t('Sorry, but there is no OCR available for the this page.');
 
