@@ -62,6 +62,7 @@ function template_preprocess_islandora_internet_archive_bookreader(array &$varia
       'iiifUri' => $iiifServerBaseURL,
       'image_max_width' => $image_max_width,
       'imageServer' => $imageServer,
+      'preventHistory' => variable_get('islandora_internet_archive_bookreader_prevent_history', FALSE),
     ),
   );
 

@@ -220,6 +220,7 @@
 
     +       "<span class='BRtoolbarSection BRtoolbarSectionInfo tc ph10'>"
     +         "<button class='BRicon info js-tooltip'></button>"
+    +         "<button class='BRicon full_text js-tooltip'></buttion>"
     +         "<button class='BRicon share js-tooltip'></button>"
     +         readIcon
     +       "</span>"
@@ -365,7 +366,17 @@
               $('.BRpageviewValue').val(window.location.href);
           }
       });
+      var overlayOpacity = Drupal.settings.islandoraInternetArchiveBookReader.overlayOpacity;
+
       jToolbar.find('.info').colorbox({inline: true, opacity: "0.5", href: "#BRinfo", onLoad: function() { self.autoStop(); self.ttsStop(); } });
+      jToolbar.find('.full_text').colorbox({inline: true, opacity: overlayOpacity, href: "#BRfulltext", onLoad: function() {
+        self.autoStop(); self.ttsStop();
+        $('#colorbox').draggable({
+          cancel: '.BRfloat > :not(.BRfloatHead)'
+        });
+        self.buildFullTextDiv($('#BRfulltext'));
+      }});
+
       jToolbar.find('.full').bind('click', function() {
         self.toggleFullScreen();
       });
@@ -378,6 +389,8 @@
         this.blankShareDiv()
       ).append(
         this.blankInfoDiv()
+      ).append(
+        this.blankFullTextDiv()
       ).appendTo($('body'));
 
       $('#BRinfo .BRfloatTitle a').attr( {'href': this.bookUrl} ).text(this.bookTitle).addClass('title');
@@ -483,7 +496,22 @@ IslandoraBookReader.prototype.blankShareDiv = function() {
         '</div>'].join('\n')
     );
 }
-  
+
+/**
+ * The default look of the "Full Text" modal dialog box.
+ */
+IslandoraBookReader.prototype.blankFullTextDiv = function() {
+     return $([
+        '<div class="BRfloat" id="BRfulltext">',
+            '<div class="BRfloatHead">Text View',
+                '<a class="floatShut" href="javascript:;" onclick="parent.jQuery.colorbox.close();"><span class="shift">' + Drupal.t('Close') + '</span></a>',
+            '</div>',
+            '<div class="BRfloatMeta">',
+            '</div>',
+            '</div>',
+        '</div>'].join('\n')
+    );
+}  
   
   
 
@@ -687,7 +715,7 @@ IslandoraBookReader.prototype.blankShareDiv = function() {
     term = term.replace(/\//g, ' '); // strip slashes, since this goes in the url
     this.searchTerm = term;
     this.removeSearchResults();
-	this.updateLocationHash(true);
+    this.updateLocationHash(true);
     this.showProgressPopup('<img id="searchmarker" src="'+ this.imagesBaseURL + 'marker_srch-on.png'+'">' + Drupal.t('Search results will appear below ...') + '</img>');
    
     $.ajax({url:url, dataType:'json',
@@ -698,6 +726,96 @@ IslandoraBookReader.prototype.blankShareDiv = function() {
               alert("Search call to " + url + " failed");
             }
            });
+  }
+  /**
+   * Appends content onto the "FullText" module dialog box.
+   */
+  IslandoraBookReader.prototype.buildFullTextDiv = function(jFullTextDiv) {
+    jFullTextDiv.find('.BRfloatMeta').height(600);
+    jFullTextDiv.find('.BRfloatMeta').width(870);
+    if (1 == this.mode) {
+      // Recent fix to correct issue with 2 page books
+      var hash_arr = this.oldLocationHash.split("/");
+      var index = hash_arr[1];
+      var pid = this.getPID(index-1);
+      $.get(this.getTextURI(pid),
+            function(data) {
+              jFullTextDiv.find('.BRfloatMeta').html(data);
+            });
+    } else if (3 == this.mode) {
+      jFullTextDiv.find('.BRfloatMeta').html('<div>' + Drupal.t('Full text not supported for this view.') + '</div>');
+    } else {
+      var twoPageText = $([
+      '<div class="textTop">',
+         '<div class="textLeft"></div>',
+         '<div class="textRight"></div>',
+      '</div>'].join('\n'));
+      jFullTextDiv.find('.BRfloatMeta').html(twoPageText);
+      var indices = this.getSpreadIndices(this.currentIndex());
+      var left_pid = this.getPID(indices[0]);
+      var right_pid = this.getPID(indices[1]);
+      if(left_pid) {
+        $.get(this.getTextURI(left_pid),
+              function(data) {
+                jFullTextDiv.find('.textLeft').html(data);
+              });
+      }
+      if(right_pid) {
+        $.get(this.getTextURI(right_pid),
+              function(data) {
+                jFullTextDiv.find('.textRight').html(data);
+              });
+      }
+    }
+  }
+
+  /**
+   * Update the location hash only change it when it actually changes, as some
+   * browsers can't handle that stuff.
+   */
+  IslandoraBookReader.prototype.updateLocationHash = function() {
+    // Updated with fix to recent bug found in the Archive Viewer that
+    // prevents the last page from displaying the correct transcriptions
+    // or hash links.
+
+    // Get the current page, from elements text.
+    var page_string = $('#pagenum .currentpage').text();
+    if (page_string) {
+      var p_arr = page_string.split(" ");
+      var p_index = p_arr[1];
+      index = p_index;
+    }
+    else {
+      index = 1;
+    }
+
+
+    var newHash = '#' + this.fragmentFromParams(this.paramsFromCurrent());
+    if (page_string != this.currentIndex() && page_string) {
+      var param_data = this.fragmentFromParams(this.paramsFromCurrent()).split("/");
+      param_data[1] = index;
+      newHash = '#' + replaceAll(',','/',param_data.toString());
+    }
+    
+    // Update the share div with the current page's url fragment hash value.
+    var pageView = (document.location + '').replace(/\/from_search\/.*/, "/viewer").replace(/#.*/,'');
+    $('#pageview').val(pageView + newHash);
+
+    var preventHistory = Drupal.settings.islandoraInternetArchiveBookReader.preventHistory;
+    // End bug fix.
+    if (!preventHistory) {
+      if (this.oldLocationHash != newHash) {
+        window.location.hash = newHash;
+      }
+    }
+
+    // This is the variable checked in the timer.  Only user-generated changes
+    // to the URL will trigger the event.
+    this.oldLocationHash = newHash;
+  }
+
+  function replaceAll(find, replace, str) {
+    return str.replace(new RegExp(find, 'g'), replace);
   }
 
   /**
@@ -752,11 +870,30 @@ IslandoraBookReader.prototype.blankShareDiv = function() {
     this.removeProgressPopup();
   }
 
+  // getEmbedURL
+  //________
+  // Returns a URL for an embedded version of the current book
+  IslandoraBookReader.prototype.getEmbedURL = function(viewParams) {
+    // We could generate a URL hash fragment here but for now we just leave at defaults
+    var full_url = window.location.href;
+    var url_arr = full_url.split("/from_search/");
+    var url = url_arr[0] + '/viewer';
+
+    url += '?ui=embed';
+    if (typeof(viewParams) != 'undefined') {
+      url += '#' + this.fragmentFromParams(viewParams);
+    }
+    return url;
+  }
+
   /**
    * Embed code is not supported at the moment.
    */
   IslandoraBookReader.prototype.getEmbedCode = function(frameWidth, frameHeight, viewParams) {
-    return Drupal.t("Embed code not currently supported.");
+    return "<iframe src='" + this.getEmbedURL(viewParams) + "' width='"
+            + frameWidth + "' height='" + frameHeight
+            + "' frameborder='0' ></iframe>";
+   // return Drupal.t("Embed code not currently supported.");
   }
 
   /**
