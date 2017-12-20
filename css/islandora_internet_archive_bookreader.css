@@ -65,18 +65,28 @@ button#btnSrch:hover {
 div.BRprogresspopup {
   position: relative;
   margin:auto;
-  max-width: 300px;
+  max-width: 340px;
 }
 .textTop {
-  font-size: 10px;
+  font-size: 12px;
+  display: flex;
+  width: 100% !important;
+  height: 100%;
+}
+.textRight, .textLeft {
+  background-color: #f8f8f8;
+  border: 2px solid #f0f0f0;
+  padding: 10px;
+  margin: 10px;
+  height: 100%;
 }
 .textRight {
   float: right;
-  width: 50%;
+  width: 49%;
 }
 .textLeft {
   float: left;
-  width: 50%;
+  width: 49%;
 }
 
 /*
@@ -88,9 +98,13 @@ div.BRprogresspopup {
 #colorbox {
   top: 335px !important;
 }
-#colorbox, #cboxOverlay, #cboxWrapper, #cboxContent, #cboxLoadedContent {
+#cboxWrapper, #cboxOverlay, #cboxContent, #cboxLoadedContent {
   max-width: 100%;
   height: 100% !important;
+}
+#colorbox {
+  max-width: 100%;
+  height: 75% !important;
 }
 #cboxWrapper {
   background: none; /* Used to eliminate white background */
@@ -709,18 +723,7 @@ html.mm-opening .mm-slideout {
     width: 16.67%
 }
 .BRicon.full_text {
-  display: block;
-  float: left;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  margin: 0;
-  vertical-align: middle;
-  border: none;
-  cursor: pointer;
-  background-color: rgba(0, 0, 0, 0);
   background-image: url(../images/BRicons.png);
-  background-repeat: no-repeat;
   background-position: -1240px 0px;
 }
 .BRicon.full_text:hover {

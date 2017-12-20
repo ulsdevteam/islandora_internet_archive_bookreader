@@ -170,7 +170,7 @@
  * This method builds the html for the toolbar. It can be decorated to extend
  * the toolbar.
  * @return {jqueryElement}
- */
+full */
   IslandoraBookReader.prototype.buildToolbarElement = function() {
   // $$$mang should be contained within the BookReader div instead of body
   var readIcon = '';
@@ -206,9 +206,9 @@
     +   "</span>"
     +   "<span id='BRtoolbarbuttons' >"
     +     "<span class='BRtoolbarLeft'>"
-    +       "<span class='BRtoolbarSection BRtoolbarSectionLogo tc'>"
-    +         "<a class='logo' href='" + this.logoURL + "'></a>"
-    +       "</span>"
+//    +       "<span class='BRtoolbarSection BRtoolbarSectionLogo tc'>"
+//    +         "<a class='logo' href='" + this.logoURL + "'></a>"
+//    +       "</span>"
 
     +       "<span class='BRtoolbarSection BRtoolbarSectionTitle title tl ph10 last'>"
     +           "<span id='BRreturn'><a></a></span>"
@@ -275,6 +275,14 @@
       var self = this;
 
       $("#BookReader").append(this.buildToolbarElement());
+
+      // Attach submit handler to form.
+      var that = this;
+      $('#BRtoolbarbuttons > form').submit(function(event) {
+        event.preventDefault();
+        that.search($('#textSrch').val());
+        return false;
+      });
 
       // Add Mobile navigation
       // ------------------------------------------------------
@@ -764,13 +772,16 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
         error: that.BRSearchCallbackErrorDesktop,
         success: that.BRSearchCallback,
       };
+
     var url = this.settings.searchUri.replace('TERM', encodeURI(term));
     term = term.replace(/\//g, ' '); // strip slashes, since this goes in the url
+
     this.searchTerm = term;
     this.removeSearchResults();
     this.updateLocationHash(true);
     this.showProgressPopup('<img id="searchmarker" src="'+ this.imagesBaseURL + 'marker_srch-on.png'+'">' + Drupal.t('Search results will appear below ...') + '</img>');
-   
+
+//    var that = this;
     $.ajax({url:url, dataType:'json',
             success: function(data, status, xhr) {
               that.BRSearchCallback(data);
@@ -785,7 +796,7 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
    */
   IslandoraBookReader.prototype.buildFullTextDiv = function(jFullTextDiv) {
     jFullTextDiv.find('.BRfloatMeta').height(600);
-    jFullTextDiv.find('.BRfloatMeta').width(870);
+//    jFullTextDiv.find('.BRfloatMeta').width(870);
     if (1 == this.mode) {
       // Recent fix to correct issue with 2 page books
       var hash_arr = this.oldLocationHash.split("/");
@@ -877,13 +888,11 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
   IslandoraBookReader.prototype.showProgressPopup = function(msg) {
     if (this.popup) return;
     this.popup = document.createElement("div");
-    $(this.popup).css({
-        top:      '-' + ($('#BookReader').height()*0.5) + 'px',
-    }).attr('className', 'BRprogresspopup');
+    $(this.popup).css({top: '100px',}).attr('class', 'BRprogresspopup');
     var bar = document.createElement("div");
     $(bar).css({
-        height:   '20px'
-    }).attr('className', 'BRprogressbar');
+        height:   '120px'
+    }).attr('class', 'BRprogressbar');
     $(this.popup).append(bar);
     if (msg) {
         var msgdiv = document.createElement("div");
@@ -911,6 +920,8 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
       setTimeout(function(){
         $(that.popup).fadeOut('slow', function() {
           that.removeProgressPopup();
+          that.popup = null;
+          this.popup = null;
         })
       },timeout);
       return;
@@ -921,6 +932,7 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
     }
     this.updateSearchHilites();
     this.removeProgressPopup();
+    this.popup = null;
   }
 
   // getEmbedURL
