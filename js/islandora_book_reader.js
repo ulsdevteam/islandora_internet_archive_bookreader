@@ -449,6 +449,59 @@
   }
 
   /**
+   * Appends content onto the "Share" module dialog box.
+   */
+  IslandoraBookReader.prototype.buildShareDiv = function(jShareDiv) {
+    var pageView = document.location + '';
+    // Remove the search part of the URL if present.
+    pageView = pageView.replace(/\/from_search\/.*/);
+    var bookView = (pageView + '').replace(/#.*/,'');
+    // Add the page 1 fragment if not present.
+    if (pageView == bookView) {
+        pageView = pageView + '#page/1/mode/1up';
+    }
+    
+    var self = this;
+    var jForm = $([
+        '<p>' + Drupal.t('Copy and paste one of these options to share this @content_type elsewhere.', {'@content_type': this.content_type}) + '</p>',
+        '<form method="post" action="">',
+            '<fieldset>',
+                '<label for="pageview">' + Drupal.t('Link to this page view:') + '</label>',
+                '<input type="text" name="pageview" id="pageview" value="' + pageView + '"/>',
+            '</fieldset>',
+            '<fieldset>',
+                '<label for="booklink">' + Drupal.t('Link to the @content_type:', {'@content_type': this.content_type}) + '</label>',
+                '<input type="text" name="booklink" id="booklink" value="' + bookView + '"/>',
+            '</fieldset>',
+            '<fieldset class="center">',
+                '<button type="button" onclick="Drupal.settings.islandoraInternetArchiveBookReader_jQuery.fn.colorbox.close();">' + Drupal.t('Finished') + '</button>',
+            '</fieldset>',
+        '</form>'].join('\n'));
+
+    jForm.appendTo(jShareDiv);
+
+    jForm.find('input').bind('change', function() {
+        var form = $(this).parents('form:first');
+        var params = {};
+        params.mode = $(form.find('input[name=pages]:checked')).val();
+        if (form.find('input[name=thispage]').attr('checked')) {
+            params.page = self.getPageNum(self.currentIndex());
+        }
+
+        // $$$ changeable width/height to be added to share UI
+        var frameWidth = "480px";
+        var frameHeight = "430px";
+        form.find('.BRframeEmbed').val(self.getEmbedCode(frameWidth, frameHeight, params));
+    })
+    jForm.find('input[name=thispage]').trigger('change');
+    jForm.find('input, textarea').bind('focus', function() {
+      this.select();
+    });
+    jForm.appendTo(jShareDiv);
+    jForm = ''; // closure
+  }
+
+  /**
    * @param JInfoDiv DOM element. Appends info to this element
    * Can be overridden or extended
    */
@@ -796,11 +849,11 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
       param_data[1] = index;
       newHash = '#' + replaceAll(',','/',param_data.toString());
     }
-    
+
     // Update the share div with the current page's url fragment hash value.
     var pageView = (document.location + '').replace(/\/from_search\/.*/, "/viewer").replace(/#.*/,'');
     $('#pageview').val(pageView + newHash);
-
+    
     var preventHistory = Drupal.settings.islandoraInternetArchiveBookReader.preventHistory;
     // End bug fix.
     if (!preventHistory) {
