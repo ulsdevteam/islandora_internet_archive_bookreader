@@ -190,6 +190,50 @@
       'svc.rotate': 0
     });
     return (base_uri + 'resolver?' + params);
+  IslandoraBookReader.prototype.getImageserverUri = function(resource_uri, reduce, rotate) {
+        if (this.settings.imageServer == 'iiif') {
+           var base_uri = this.settings.iiifUri;
+           if (base_uri.charAt(base_uri.length) != '/') {
+                base_uri += '/';
+           }
+
+           // image_max_width > 0 => fixed width / thumb = 1/2
+	   // image_max_width = 0 => automatic variable width depends on reduce parameter
+
+           if (this.settings.image_max_width > 0) {
+
+                if (this.mode == 3) {
+                        var tile_width = Math.ceil(this.settings.image_max_width/2);
+                }else {
+                        var tile_width = Math.ceil(this.settings.image_max_width);
+                }
+                var params = '/full/' + tile_width + ',/0/default.jpg';
+           }
+           else {
+                var params = '/full/pct:' + (1.0 / reduce * 100).toFixed(0) + '/0/default.jpg';
+           }
+           return (base_uri + encodeURIComponent(resource_uri) + params);
+        }
+        else {
+
+                var base_uri = this.settings.djatokaUri;
+                //Do some sanitation on that base uri.
+                //Since it comes from an admin form, let's make sure there's a '/' at the
+                //end of it.
+                if (base_uri.charAt(base_uri.length - 1) != '/') {
+                        base_uri += '/';
+                }
+                var params = $.param({
+                  'rft_id': resource_uri,
+                  'url_ver': 'Z39.88-2004',
+                  'svc_id': 'info:lanl-repo/svc/getRegion',
+                  'svc_val_fmt': 'info:ofi/fmt:kev:mtx:jpeg2000',
+                  'svc.format': 'image/jpeg',
+                  'svc.level': this.settings.compression,
+                  'svc.rotate': 0
+                });
+                return (base_uri + 'resolver?' + params);
+        }
   };
 
   /**
