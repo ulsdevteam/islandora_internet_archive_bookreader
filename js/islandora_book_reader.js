@@ -163,6 +163,100 @@
     return this.settings.searchUri != null;
   }
 
+/**
+ *
+ * Overrided here to enable fullscreen button, maybe a better metod to do it
+ *
+ * This method builds the html for the toolbar. It can be decorated to extend
+ * the toolbar.
+ * @return {jqueryElement}
+full */
+  IslandoraBookReader.prototype.buildToolbarElement = function() {
+  // $$$mang should be contained within the BookReader div instead of body
+  var readIcon = '';
+  if (this.isSoundManagerSupported) {
+      readIcon = "<button class='BRicon read modal js-tooltip'></button>";
+  }
+
+  var escapedTitle = BookReader.util.escapeHTML(this.bookTitle);
+
+  var mobileClass = '';
+  if (this.enableMobileNav) {
+    mobileClass = 'responsive';
+  }
+
+  var desktopSearchHtml = '';
+  if (this.enableSearch) {
+      desktopSearchHtml = "<span class='BRtoolbarSection BRtoolbarSectionSearch tc ph20 last'>"
+      +         "<form class='booksearch desktop'>"
+      +           "<input type='search' class='textSrch form-control' name='textSrch' val='' placeholder='Search inside this book'/>"
+      +           "<button type='submit' id='btnSrch' name='btnSrch'>"
+      +              "<img src=\""+this.imagesBaseURL+"icon_search_button.svg\" />"
+      +           "</button>"
+      +         "</form>"
+      +       "</span>";
+  }
+
+  // Add large screen navigation
+  return $(
+    "<div id='BRtoolbar' class='header fixed "+mobileClass+"'>"
+    +   "<span class='BRmobileHamburgerWrapper'>"
+    +     "<span class=\"hamburger\"><a href=\"#BRmobileMenu\"></a></span>"
+    +     "<span class=\"BRtoolbarMobileTitle\" title=\""+escapedTitle+"\">" + this.bookTitle + "</span>"
+    +   "</span>"
+    +   "<span id='BRtoolbarbuttons' >"
+    +     "<span class='BRtoolbarLeft'>"
+//    +       "<span class='BRtoolbarSection BRtoolbarSectionLogo tc'>"
+//    +         "<a class='logo' href='" + this.logoURL + "'></a>"
+//    +       "</span>"
+
+    +       "<span class='BRtoolbarSection BRtoolbarSectionTitle title tl ph10 last'>"
+    +           "<span id='BRreturn'><a></a></span>"
+    +           "<div id='BRnavCntlTop' class='BRnabrbuvCntl'></div>"
+    +       "</span>"
+    +    "</span>"
+
+    +     "<span class='BRtoolbarRight'>"
+
+    +       "<span class='BRtoolbarSection BRtoolbarSectionInfo tc ph10'>"
+    +         "<button class='BRicon info js-tooltip'></button>"
+    +         "<button class='BRicon full_text js-tooltip'></buttion>"
+    +         "<button class='BRicon share js-tooltip'></button>"
+    +         readIcon
+    +       "</span>"
+
+    // zoom
+    +       "<span class='BRtoolbarSection BRtoolbarSectionZoom tc ph10'>"
+    +         "<button class='BRicon zoom_out js-tooltip'></button>"
+    +         "<button class='BRicon zoom_in js-tooltip'></button>"
+    +       "</span>"
+
+    // Search
+    + desktopSearchHtml
+
+    // enable fullscreen button
+    +     "<button class='BRicon full'></button>"
+
+    +     "</span>" // end BRtoolbarRight
+
+    +   "</span>" // end desktop-only
+
+    + "</div>"
+    /*
+    + "<div id='BRzoomer'>"
+    +   "<div id='BRzoompos'>"
+    +     "<button class='BRicon zoom_out'></button>"
+    +     "<div id='BRzoomcontrol'>"
+    +       "<div id='BRzoomstrip'></div>"
+    +       "<div id='BRzoombtn'></div>"
+    +     "</div>"
+    +     "<button class='BRicon zoom_in'></button>"
+    +   "</div>"
+    + "</div>"
+    */
+    );
+}
+  
   /**
    * Gets the Djatoka URI.
    *
@@ -323,12 +417,15 @@
    * Search SOLR for the given term.
    */
   IslandoraBookReader.prototype.search = function(term) {
+
     var url = this.settings.searchUri.replace('TERM', encodeURI(term));
     term = term.replace(/\//g, ' '); // strip slashes, since this goes in the url
+
     this.searchTerm = term;
     this.removeSearchResults();
     this.showProgressPopup('<img id="searchmarker" src="'+ this.imagesBaseURL + 'marker_srch-on.png'+'">' + Drupal.t('Search results will appear below ...') + '</img>');
-    var that = this;
+
+//    var that = this;
     $.ajax({url:url, dataType:'json',
             success: function(data, status, xhr) {
               that.BRSearchCallback(data);
@@ -338,6 +435,47 @@
             }
            });
   }
+  /**
+   * Appends content onto the "FullText" module dialog box.
+   */
+  IslandoraBookReader.prototype.buildFullTextDiv = function(jFullTextDiv) {
+    jFullTextDiv.find('.BRfloatMeta').height(600);
+//    jFullTextDiv.find('.BRfloatMeta').width(870);
+    if (1 == this.mode) {
+      // Recent fix to correct issue with 2 page books
+      var hash_arr = this.oldLocationHash.split("/");
+      var index = hash_arr[1];
+      var pid = this.getPID(index-1);
+      $.get(this.getTextURI(pid),
+            function(data) {
+              jFullTextDiv.find('.BRfloatMeta').html(data);
+            });
+    } else if (3 == this.mode) {
+      jFullTextDiv.find('.BRfloatMeta').html('<div>' + Drupal.t('Full text not supported for this view.') + '</div>');
+    } else {
+      var twoPageText = $([
+      '<div class="textTop">',
+         '<div class="textLeft"></div>',
+         '<div class="textRight"></div>',
+      '</div>'].join('\n'));
+      jFullTextDiv.find('.BRfloatMeta').html(twoPageText);
+      var indices = this.getSpreadIndices(this.currentIndex());
+      var left_pid = this.getPID(indices[0]);
+      var right_pid = this.getPID(indices[1]);
+      if(left_pid) {
+        $.get(this.getTextURI(left_pid),
+              function(data) {
+                jFullTextDiv.find('.textLeft').html(data);
+              });
+      }
+      if(right_pid) {
+        $.get(this.getTextURI(right_pid),
+              function(data) {
+                jFullTextDiv.find('.textRight').html(data);
+              });
+      }
+    }
+  }
 
   /**
    * Display the Search Progress
@@ -345,13 +483,11 @@
   IslandoraBookReader.prototype.showProgressPopup = function(msg) {
     if (this.popup) return;
     this.popup = document.createElement("div");
-    $(this.popup).css({
-        top:      '-' + ($('#BookReader').height()*0.5) + 'px',
-    }).attr('className', 'BRprogresspopup');
+    $(this.popup).css({top: '100px',}).attr('class', 'BRprogresspopup');
     var bar = document.createElement("div");
     $(bar).css({
-        height:   '20px'
-    }).attr('className', 'BRprogressbar');
+        height:   '120px'
+    }).attr('class', 'BRprogressbar');
     $(this.popup).append(bar);
     if (msg) {
         var msgdiv = document.createElement("div");
@@ -379,6 +515,8 @@
       setTimeout(function(){
         $(that.popup).fadeOut('slow', function() {
           that.removeProgressPopup();
+          that.popup = null;
+          this.popup = null;
         })
       },timeout);
       return;
@@ -389,6 +527,7 @@
     }
     this.updateSearchHilites();
     this.removeProgressPopup();
+    this.popup = null;
   }
 
   /**
