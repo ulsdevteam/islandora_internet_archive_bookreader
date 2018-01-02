@@ -98,7 +98,11 @@ div.BRprogresspopup {
 #colorbox {
   top: 335px !important;
 }
-#cboxWrapper, #cboxOverlay, #cboxContent, #cboxLoadedContent {
+#cboxWrapper {
+  max-width: 100%;
+  height: 75% !important;
+}
+#cboxOverlay, #cboxContent, #cboxLoadedContent {
   max-width: 100%;
   height: 100% !important;
 }
