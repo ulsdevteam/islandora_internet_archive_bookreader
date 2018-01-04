@@ -371,7 +371,7 @@ full */
           onLoad: function() {
               self.autoStop();
               self.ttsStop();
-//              $('.BRpageviewValue').val(window.location.href);
+              $('.BRpageviewValue').val(window.location.href);
           }
       });
       var overlayOpacity = Drupal.settings.islandoraInternetArchiveBookReader.overlayOpacity;
@@ -460,9 +460,14 @@ full */
    * Appends content onto the "Share" module dialog box.
    */
   IslandoraBookReader.prototype.buildShareDiv = function(jShareDiv) {
-    var pageView = document.location + '';
-    // Remove the search part of the URL if present.
-    pageView = pageView.replace(/\/from_search\/.*/);
+    var pageView = document.location.origin + document.location.pathname;
+    if (pageView.includes("/from_search")) {
+      var url_arr = pageView.split("/from_search/");
+    }
+    else {
+      var url_arr = pageView.split("/viewer");
+    }
+    pageView = url_arr[0] + '/viewer';
     var bookView = (pageView + '').replace(/#.*/,'');
     // Add the page 1 fragment if not present.
     if (pageView == bookView) {
@@ -482,7 +487,7 @@ full */
                 '<input type="text" name="booklink" id="booklink" value="' + bookView + '"/>',
             '</fieldset>',
             '<fieldset class="center">',
-                '<button type="button" onclick="Drupal.settings.islandoraInternetArchiveBookReader_jQuery.fn.colorbox.close();">' + Drupal.t('Finished') + '</button>',
+                '<button type="button" onclick="parent.jQuery.colorbox.close();">' + Drupal.t('Finished') + '</button>',
             '</fieldset>',
         '</form>'].join('\n'));
 
@@ -860,7 +865,15 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
       newHash = '#' + replaceAll(',','/',param_data.toString());
     }
 
-    var pageView = document.location + newHash;
+    var pageView = document.location.origin + document.location.pathname;
+    if (pageView.includes("/from_search")) {
+      var url_arr = pageView.split("/from_search/");
+    }
+    else {
+      var url_arr = pageView.split("/viewer");
+    }
+    pageView = url_arr[0] + '/viewer' + newHash;
+
     if (1 == this.mode) {
       $('input#pageview').val(pageView);
     } else if (2 == this.mode) {
@@ -939,7 +952,12 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
   IslandoraBookReader.prototype.getEmbedURL = function(viewParams) {
     // We could generate a URL hash fragment here but for now we just leave at defaults
     var full_url = window.location.href;
-    var url_arr = full_url.split("/from_search/");
+    if (full_url.includes("/from_search")) {
+      var url_arr = full_url.split("/from_search/");
+    }
+    else {
+      var url_arr = full_url.split("/viewer");
+    }
     var url = url_arr[0] + '/viewer';
 
     url += '?ui=embed';
