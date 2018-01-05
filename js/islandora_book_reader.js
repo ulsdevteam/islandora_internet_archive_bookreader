@@ -687,6 +687,46 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
   }
 
   /**
+   * Islandora version of this needs to compare just the first part of the pageURI
+   */
+  IslandoraBookReader.prototype.prefetchImg = function(index) {
+     var pageURI = this._getPageURI(index);
+
+      // Load image if not loaded or URI has changed (e.g. due to scaling)
+      var loadImage = false;
+      if (undefined == this.prefetchedImgs[index]) {
+          //console.log('no image for ' + index);
+          loadImage = true;
+      } else {
+          if (pageURI.includes("%3Ftoken%3D") && this.prefetchedImgs[index].uri.includes("%3Ftoken%3D")) {
+              // Since token is always unique, strip anything after that away and only use
+              // the first part to compare for if it is loaded already.
+              var pageURI_arr = pageURI.split("%3Ftoken%3D");
+              var prefetched_uri_arr = this.prefetchedImgs[index].uri.split("%3Ftoken%3D");
+              if (pageURI_arr[0] != prefetched_uri_arr[0]) {
+                  loadImage = true;
+              }
+          } else if (pageURI != this.prefetchedImgs[index].uri) {
+            //console.log('uri changed for ' + index);
+            loadImage = true;
+          }
+      }
+
+      if (loadImage) {
+          //console.log('prefetching ' + index);
+          var img = document.createElement("img");
+          $(img).addClass('BRpageimage').addClass('BRnoselect');
+          if (index < 0 || index > (this.numLeafs - 1) ) {
+              // Facing page at beginning or end, or beyond
+              $(img).addClass('BRemptypage');
+          }
+          img.src = pageURI;
+          img.uri = pageURI; // browser may rewrite src so we stash raw URI here
+          this.prefetchedImgs[index] = img;
+      }
+  }
+
+  /**
    * Get the URI to the text content for the given page object.
    * This content will be displayed in the full text modal dialog box.
    *
