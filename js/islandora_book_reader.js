@@ -623,6 +623,9 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
                 if (base_uri.charAt(base_uri.length - 1) != '/') {
                         base_uri += '/';
                 }
+                // Since the request to djatoka fails over https, change the resource_uri used 
+                // from https to http so that the images load.
+                resource_uri = resource_uri.replace("https://", "http://");
                 var params = $.param({
                   'rft_id': resource_uri,
                   'url_ver': 'Z39.88-2004',
