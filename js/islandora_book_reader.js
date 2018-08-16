@@ -816,8 +816,8 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
     } else {
       var twoPageText = $([
       '<div class="textTop">',
-         '<div class="textLeft"></div>',
-         '<div class="textRight"></div>',
+         '<textarea class="textLeft" rows="90" readonly></textarea>',
+         '<textarea class="textRight" rows="90" readonly></textarea>',
       '</div>'].join('\n'));
       jFullTextDiv.find('.BRfloatMeta').html(twoPageText);
       var indices = this.getSpreadIndices(this.currentIndex());
@@ -826,13 +826,13 @@ IslandoraBookReader.prototype.blankFullTextDiv = function() {
       if(left_pid) {
         $.get(this.getTextURI(left_pid),
               function(data) {
-                jFullTextDiv.find('.textLeft').html(data);
+                jFullTextDiv.find('.textLeft').html(data.trim());
               });
       }
       if(right_pid) {
         $.get(this.getTextURI(right_pid),
               function(data) {
-                jFullTextDiv.find('.textRight').html(data);
+                jFullTextDiv.find('.textRight').html(data.trim());
               });
       }
     }
