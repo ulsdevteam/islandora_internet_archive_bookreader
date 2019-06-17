@@ -120,6 +120,15 @@ function islandora_internet_archive_bookreader_get_image_uri_callback($object_id
       ),
     ));
   }
-  echo $uri;
+
+  module_load_include('inc', 'islandora', 'includes/authtokens');
+  $uri_params = array(
+    'absolute' => TRUE,
+    'query' => array(
+      'token' => islandora_get_object_token($object_id, $dsid, 2),
+    ),
+  );
+
+  echo url("islandora/object/{$object_id}/datastream/$dsid/view", $uri_params);
   drupal_exit();
 }
