@@ -88,6 +88,358 @@
     return this.settings.searchUri != null;
   }
 
+/**
+ *
+ * Overrided here to enable fullscreen button, maybe a better metod to do it
+ *
+ * This method builds the html for the toolbar. It can be decorated to extend
+ * the toolbar.
+ * @return {jqueryElement}
+ */
+  IslandoraBookReader.prototype.buildToolbarElement = function() {
+  // $$$mang should be contained within the BookReader div instead of body
+  var readIcon = '';
+  if (this.isSoundManagerSupported) {
+      readIcon = "<button class='BRicon read modal js-tooltip'></button>";
+  }
+
+  var escapedTitle = BookReader.util.escapeHTML(this.bookTitle);
+
+  var mobileClass = '';
+  if (this.enableMobileNav) {
+    mobileClass = 'responsive';
+  }
+
+  var desktopSearchHtml = '';
+  if (this.enableSearch) {
+      desktopSearchHtml = "<span class='BRtoolbarSection BRtoolbarSectionSearch tc ph20 last'>"
+      +         "<form class='booksearch desktop'>"
+      +           "<input type='search' class='textSrch form-control' name='textSrch' val='' placeholder='Search inside this book'/>"
+      +           "<button type='submit' id='btnSrch' name='btnSrch'>"
+      +              "<img src=\""+this.imagesBaseURL+"icon_search_button.svg\" />"
+      +           "</button>"
+      +         "</form>"
+      +       "</span>";
+  }
+
+  // Add large screen navigation
+  return $(
+    "<div id='BRtoolbar' class='header fixed "+mobileClass+"'>"
+    +   "<span class='BRmobileHamburgerWrapper'>"
+    +     "<span class=\"hamburger\"><a href=\"#BRmobileMenu\"></a></span>"
+    +     "<span class=\"BRtoolbarMobileTitle\" title=\""+escapedTitle+"\">" + this.bookTitle + "</span>"
+    +   "</span>"
+    +   "<span id='BRtoolbarbuttons' >"
+    +     "<span class='BRtoolbarLeft'>"
+    +       "<span class='BRtoolbarSection BRtoolbarSectionLogo tc'>"
+    +         "<a class='logo' href='" + this.logoURL + "'></a>"
+    +       "</span>"
+
+    +       "<span class='BRtoolbarSection BRtoolbarSectionTitle title tl ph10 last'>"
+    +           "<span id='BRreturn'><a></a></span>"
+    +           "<div id='BRnavCntlTop' class='BRnabrbuvCntl'></div>"
+    +       "</span>"
+    +    "</span>"
+
+    +     "<span class='BRtoolbarRight'>"
+
+    +       "<span class='BRtoolbarSection BRtoolbarSectionInfo tc ph10'>"
+    +         "<button class='BRicon info js-tooltip'></button>"
+    +         "<button class='BRicon full_text js-tooltip'></buttion>"
+    +         "<button class='BRicon share js-tooltip'></button>"
+    +         readIcon
+    +       "</span>"
+
+    // zoom
+    +       "<span class='BRtoolbarSection BRtoolbarSectionZoom tc ph10'>"
+    +         "<button class='BRicon zoom_out js-tooltip'></button>"
+    +         "<button class='BRicon zoom_in js-tooltip'></button>"
+    +       "</span>"
+
+    // Search
+    + desktopSearchHtml
+
+    // enable fullscreen button
+    +     "<button class='BRicon full'></button>"
+
+    +     "</span>" // end BRtoolbarRight
+
+    +   "</span>" // end desktop-only
+
+    + "</div>"
+    /*
+    + "<div id='BRzoomer'>"
+    +   "<div id='BRzoompos'>"
+    +     "<button class='BRicon zoom_out'></button>"
+    +     "<div id='BRzoomcontrol'>"
+    +       "<div id='BRzoomstrip'></div>"
+    +       "<div id='BRzoombtn'></div>"
+    +     "</div>"
+    +     "<button class='BRicon zoom_in'></button>"
+    +   "</div>"
+    + "</div>"
+    */
+    );
+}
+  
+  /**
+   * Islandora version of initToolbar function
+   *
+   * Only exists until IAbookreader fixes a wrong context
+   *
+   * @param string mode
+   *   The way we are paging, 1up, 2up, etc.
+   *
+   * @return string ui
+   *   If we are on full UI mode, etc.
+   */
+  IslandoraBookReader.prototype.initToolbar = function(mode, ui) {
+      if (ui == "embed") {
+          return; // No toolbar at top in embed mode
+      }
+      var self = this;
+
+      $("#BookReader").append(this.buildToolbarElement());
+
+      // Add Mobile navigation
+      // ------------------------------------------------------
+      if (this.enableMobileNav) {
+        $("body").append(this.buildMobileDrawerElement());
+
+        // Render info into mobile info before mmenu
+        this.buildInfoDiv($('#mobileInfo'));
+        this.buildShareDiv($('#mobileShare'));
+
+        var $mmenuEl = $('nav#BRmobileMenu');
+        $mmenuEl.mmenu({
+            navbars: [
+               { "position": "top" },
+            ],
+            navbar: {
+              add: true,
+              title: this.mobileNavTitle,
+              titleLink: 'panel'
+            },
+            extensions: [ "panelshadow" ],
+         }, {
+            offCanvas: {
+              wrapPageIfNeeded: false,
+              zposition: 'next',
+              pageSelector: '#BookReader',
+            }
+        });
+
+        var $BRpageviewField = $mmenuEl.find('.BRpageviewValue');
+        $mmenuEl.data('mmenu').bind('opened', function() {
+            // Update "Link to this page view" link
+            if ($BRpageviewField.length) $BRpageviewField.val(window.location.href);
+        });
+        this.mmenu = $mmenuEl;
+      }
+
+      //--------------------------------------------------------
+
+
+      $('#BRreturn a')
+        .addClass('BRTitleLink')
+        .attr({'href': self.bookUrl, 'title': self.bookTitle})
+        .html('<span class="BRreturnTitle">' + this.bookTitle + '</span>')
+        ;
+
+      if (self.bookUrl && self.bookUrlTitle && self.bookUrlText) {
+        $('#BRreturn a').append('<br>' + self.bookUrlText)
+      }
+
+
+      $('#BRtoolbar .BRnavCntl').addClass('BRup');
+      $('#BRtoolbar .pause').hide();
+
+      this.updateToolbarZoom(this.reduce); // Pretty format
+
+      if (ui == "embed" || ui == "touch") {
+          $("#BookReader a.logo").attr("target","_blank");
+      }
+
+      // $$$ turn this into a member variable
+      var jToolbar = $('#BRtoolbar'); // j prefix indicates jQuery object
+
+      // We build in mode 2
+      jToolbar.append();
+
+      // Hide mode buttons and autoplay if 2up is not available
+      // $$$ if we end up with more than two modes we should show the applicable buttons
+      if ( !this.canSwitchToMode(this.constMode2up) ) {
+          jToolbar.find('.two_page_mode, .play, .pause').hide();
+      }
+      if ( !this.canSwitchToMode(this.constModeThumb) ) {
+          jToolbar.find('.thumbnail_mode').hide();
+      }
+
+      // Hide one page button if it is the only mode available
+      if ( ! (this.canSwitchToMode(this.constMode2up) || this.canSwitchToMode(this.constModeThumb)) ) {
+          jToolbar.find('.one_page_mode').hide();
+      }
+
+      // $$$ Don't hardcode ids
+      jToolbar.find('.share').colorbox({
+          inline: true,
+          opacity: "0.5",
+          href: "#BRshare",
+          onLoad: function() {
+              self.autoStop();
+              self.ttsStop();
+              $('.BRpageviewValue').val(window.location.href);
+          }
+      });
+      var overlayOpacity = Drupal.settings.islandoraInternetArchiveBookReader.overlayOpacity;
+
+      jToolbar.find('.info').colorbox({inline: true, opacity: "0.5", href: "#BRinfo", onLoad: function() { self.autoStop(); self.ttsStop(); } });
+      jToolbar.find('.full_text').colorbox({inline: true, opacity: overlayOpacity, href: "#BRfulltext", onLoad: function() {
+        self.autoStop(); self.ttsStop();
+        $('#colorbox').draggable({
+          cancel: '.BRfloat > :not(.BRfloatHead)'
+        });
+        self.buildFullTextDiv($('#BRfulltext'));
+      }});
+
+      jToolbar.find('.full').bind('click', function() {
+        self.toggleFullScreen();
+      });
+      $(window).keyup(function(e) {
+        if(e.keyCode == 27 && self.fullscreen) {
+          self.toggleFullScreen();
+        }
+      });
+      $('<div style="display: none;"></div>').append(
+        this.blankShareDiv()
+      ).append(
+        this.blankInfoDiv()
+      ).append(
+        this.blankFullTextDiv()
+      ).appendTo($('body'));
+
+      $('#BRinfo .BRfloatTitle a').attr( {'href': this.bookUrl} ).text(this.bookTitle).addClass('title');
+
+      // These functions can be overridden
+      this.buildInfoDiv($('#BRinfo'));
+      this.buildShareDiv($('#BRshare'));
+
+      // High contrast button
+      $('.high-contrast-button').click(function() {
+        $('body').toggleClass('high-contrast');
+      });
+
+      // Bind mobile switch buttons
+      $('.DrawerLayoutButton.one_page_mode').click(function() {
+        self.switchMode(self.constMode1up);
+      });
+      $('.DrawerLayoutButton.two_page_mode').click(function() {
+        self.switchMode(self.constMode2up);
+      });
+      $('.DrawerLayoutButton.thumbnail_mode').click(function() {
+        self.switchMode(self.constModeThumb);
+      });
+      
+	  // This tiny little line is the whole reason i had to reimplement this method.
+	  var br = this;
+
+      // Bind search form
+      if (this.enableSearch) {
+          $('.booksearch.desktop').submit(function(e) {
+              e.preventDefault();
+              var val = $(this).find('.textSrch').val();
+              if (!val.length) return false;
+              br.search(val);
+              return false;
+          });
+          $('.booksearch.mobile').submit(function(e) {
+              e.preventDefault();
+              var val = $(this).find('.textSrch').val();
+              if (!val.length) return false;
+              br.search(val, {
+                  disablePopup:true,
+                  error: br.BRSearchCallbackErrorMobile,
+              });
+              $('#mobileSearchResultWrapper').append(
+                  '<div class="">Your search results will appear below.</div>'
+                  + '<div class="loader tc mt20"></div>'
+              );
+              return false;
+          });
+          // Handle clearing the search results
+          $(".textSrch").bind('input propertychange', function() {
+              if (this.value == "") br.removeSearchResults();
+          });
+      }
+  }
+
+  /**
+   * @param JInfoDiv DOM element. Appends info to this element
+   * Can be overridden or extended
+   */
+  IslandoraBookReader.prototype.buildInfoDiv = function(jInfoDiv) {
+      // Remove these legacy elements
+      jInfoDiv.find('.BRfloatBody, .BRfloatCover, .BRfloatFoot').remove();
+
+      $(this.settings.info).appendTo(jInfoDiv);
+  }
+
+  /**
+   * override $.fn.colorbox.close() with parent.jQuery.colorbox.close()
+   * in blankInfoDiv and blankShareDiv. Could be better than with override?
+   */
+
+IslandoraBookReader.prototype.blankInfoDiv = function() {
+    return $([
+        '<div class="BRfloat" id="BRinfo">',
+            '<div class="BRfloatHead">About this book',
+                '<button class="floatShut" href="javascript:;" onclick="parent.jQuery.colorbox.close();"><span class="shift">Close</span></a>',
+            '</div>',
+            '<div class="BRfloatBody">',
+                '<div class="BRfloatCover">',
+                '</div>',
+                '<div class="BRfloatMeta">',
+                    '<div class="BRfloatTitle">',
+                        '<h2><a/></h2>',
+                    '</div>',
+                '</div>',
+            '</div>',
+            '<div class="BRfloatFoot">',
+                '<a href="https://openlibrary.org/dev/docs/bookreader">About the BookReader</a>',
+            '</div>',
+        '</div>'].join('\n')
+    );
+}
+
+IslandoraBookReader.prototype.blankShareDiv = function() {
+    return $([
+        '<div class="BRfloat" id="BRshare">',
+            '<div class="BRfloatHead">',
+                'Share',
+                '<button class="floatShut" href="javascript:;" onclick="parent.jQuery.colorbox.close();"><span class="shift">Close</span></a>',
+            '</div>',
+        '</div>'].join('\n')
+    );
+}
+
+/**
+ * The default look of the "Full Text" modal dialog box.
+ */
+IslandoraBookReader.prototype.blankFullTextDiv = function() {
+     return $([
+        '<div class="BRfloat" id="BRfulltext">',
+            '<div class="BRfloatHead">Text View',
+                '<a class="floatShut" href="javascript:;" onclick="parent.jQuery.colorbox.close();"><span class="shift">' + Drupal.t('Close') + '</span></a>',
+            '</div>',
+            '<div class="BRfloatMeta">',
+            '</div>',
+            '</div>',
+        '</div>'].join('\n')
+    );
+}  
+  
+  
+
   /**
    * Get the URI to the text content for the given page object.
    * This content will be displayed in the full text modal dialog box.
@@ -196,6 +548,96 @@
             }
            });
   }
+  /**
+   * Appends content onto the "FullText" module dialog box.
+   */
+  IslandoraBookReader.prototype.buildFullTextDiv = function(jFullTextDiv) {
+    jFullTextDiv.find('.BRfloatMeta').height(600);
+    jFullTextDiv.find('.BRfloatMeta').width(870);
+    if (1 == this.mode) {
+      // Recent fix to correct issue with 2 page books
+      var hash_arr = this.oldLocationHash.split("/");
+      var index = hash_arr[1];
+      var pid = this.getPID(index-1);
+      $.get(this.getTextURI(pid),
+            function(data) {
+              jFullTextDiv.find('.BRfloatMeta').html(data);
+            });
+    } else if (3 == this.mode) {
+      jFullTextDiv.find('.BRfloatMeta').html('<div>' + Drupal.t('Full text not supported for this view.') + '</div>');
+    } else {
+      var twoPageText = $([
+      '<div class="textTop">',
+         '<div class="textLeft"></div>',
+         '<div class="textRight"></div>',
+      '</div>'].join('\n'));
+      jFullTextDiv.find('.BRfloatMeta').html(twoPageText);
+      var indices = this.getSpreadIndices(this.currentIndex());
+      var left_pid = this.getPID(indices[0]);
+      var right_pid = this.getPID(indices[1]);
+      if(left_pid) {
+        $.get(this.getTextURI(left_pid),
+              function(data) {
+                jFullTextDiv.find('.textLeft').html(data);
+              });
+      }
+      if(right_pid) {
+        $.get(this.getTextURI(right_pid),
+              function(data) {
+                jFullTextDiv.find('.textRight').html(data);
+              });
+      }
+    }
+  }
+
+  /**
+   * Update the location hash only change it when it actually changes, as some
+   * browsers can't handle that stuff.
+   */
+  IslandoraBookReader.prototype.updateLocationHash = function() {
+    // Updated with fix to recent bug found in the Archive Viewer that
+    // prevents the last page from displaying the correct transcriptions
+    // or hash links.
+
+    // Get the current page, from elements text.
+    var page_string = $('#pagenum .currentpage').text();
+    if (page_string) {
+      var p_arr = page_string.split(" ");
+      var p_index = p_arr[1];
+      index = p_index;
+    }
+    else {
+      index = 1;
+    }
+
+
+    var newHash = '#' + this.fragmentFromParams(this.paramsFromCurrent());
+    if (page_string != this.currentIndex() && page_string) {
+      var param_data = this.fragmentFromParams(this.paramsFromCurrent()).split("/");
+      param_data[1] = index;
+      newHash = '#' + replaceAll(',','/',param_data.toString());
+    }
+    
+    // Update the share div with the current page's url fragment hash value.
+    var pageView = (document.location + '').replace(/\/from_search\/.*/, "/viewer").replace(/#.*/,'');
+    $('#pageview').val(pageView + newHash);
+
+    var preventHistory = Drupal.settings.islandoraInternetArchiveBookReader.preventHistory;
+    // End bug fix.
+    if (!preventHistory) {
+      if (this.oldLocationHash != newHash) {
+        window.location.hash = newHash;
+      }
+    }
+
+    // This is the variable checked in the timer.  Only user-generated changes
+    // to the URL will trigger the event.
+    this.oldLocationHash = newHash;
+  }
+
+  function replaceAll(find, replace, str) {
+    return str.replace(new RegExp(find, 'g'), replace);
+  }
 
   /**
    * Display the Search Progress
@@ -249,11 +691,30 @@
     this.removeProgressPopup();
   }
 
+  // getEmbedURL
+  //________
+  // Returns a URL for an embedded version of the current book
+  IslandoraBookReader.prototype.getEmbedURL = function(viewParams) {
+    // We could generate a URL hash fragment here but for now we just leave at defaults
+    var full_url = window.location.href;
+    var url_arr = full_url.split("/from_search/");
+    var url = url_arr[0] + '/viewer';
+
+    url += '?ui=embed';
+    if (typeof(viewParams) != 'undefined') {
+      url += '#' + this.fragmentFromParams(viewParams);
+    }
+    return url;
+  }
+
   /**
    * Embed code is not supported at the moment.
    */
   IslandoraBookReader.prototype.getEmbedCode = function(frameWidth, frameHeight, viewParams) {
-    return Drupal.t("Embed code not currently supported.");
+    return "<iframe src='" + this.getEmbedURL(viewParams) + "' width='"
+            + frameWidth + "' height='" + frameHeight
+            + "' frameborder='0' ></iframe>";
+   // return Drupal.t("Embed code not currently supported.");
   }
 
   /**

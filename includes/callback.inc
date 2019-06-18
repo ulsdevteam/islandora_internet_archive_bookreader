@@ -28,7 +28,7 @@ function islandora_internet_archive_bookreader_dimensions_callback(AbstractObjec
 }
 
 /**
- * Prints the given page objects OCR datastream.
+ * Prints the given page objects OCR datastream (or stripped HOCR datastream).
  *
  * This function exits.
  *
@@ -36,13 +36,14 @@ function islandora_internet_archive_bookreader_dimensions_callback(AbstractObjec
  *   The page object whose OCR data-stream will be used for display.
  */
 function islandora_internet_archive_bookreader_text_callback(AbstractObject $object) {
-  $ocr_exists = isset($object['OCR']);
-  $accessible_ocr = isset($object['OCR']) && islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['OCR']);
+  $ocr_exists = isset($object['OCR']) || isset($object['HOCR']);
+  $accessible_ocr = (isset($object['OCR']) && islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['OCR']) ||
+          isset($object['HOCR']) && islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['HOCR']));
   echo $ocr_exists ? (
     $accessible_ocr ?
-      htmlspecialchars($object['OCR']->content) :
+      (isset($object['OCR']) ? nl2br(trim(htmlspecialchars($object['OCR']->content))) : nl2br(trim(strip_tags($object['HOCR']->content)))) :
       t('You do not have permission to view the OCR for this page.')) :
-    t('Sorry, but there is no OCR available for the this page.');
+    t('Sorry, but there is no OCR available for this page.');
 
   drupal_exit();
 }

@@ -90,6 +90,8 @@ function template_preprocess_islandora_internet_archive_bookreader(array &$varia
       'mode' => $view_mode,
       'mobilize' => variable_get('islandora_internet_archive_bookreader_mobile_full_screen', FALSE),
       'content_type' => variable_get('islandora_internet_archive_bookreader_content_type', 'book'),
+      'useBackupUri' => $backup_uris,
+      'preventHistory' => variable_get('islandora_internet_archive_bookreader_prevent_history', FALSE),
       'hasCover' => $hascover,
     ) + $page_source_settings,
   );

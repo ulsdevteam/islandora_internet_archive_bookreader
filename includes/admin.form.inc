@@ -132,6 +132,11 @@ function islandora_internet_archive_bookreader_admin_settings_form(array $form, 
       '#title' => t('Force the Internet Archive Bookreader into full screen for mobile users?'),
       '#default_value' => variable_get('islandora_internet_archive_bookreader_mobile_full_screen', FALSE),
     ),
+    'islandora_internet_archive_bookreader_prevent_history' => array(
+      '#type' => 'checkbox',
+      '#title' => t('Prevent page navigation from creating browser history items.'),
+      '#default_value' => variable_get('islandora_internet_archive_bookreader_prevent_history', FALSE),
+    ),
   );
   return system_settings_form($form);
 }
