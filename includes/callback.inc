@@ -105,6 +105,6 @@ function islandora_internet_archive_bookreader_get_image_uri_callback($object_id
     ),
   );
 
-  echo url("islandora/object/{$object_id}/datastream/$dsid/view", $uri_params);
+  echo preg_replace('/^https/', 'http', url("islandora/object/{$object_id}/datastream/$dsid/view", $uri_params));
   drupal_exit();
 }
