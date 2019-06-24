@@ -114,7 +114,7 @@ full */
   if (this.enableSearch) {
       desktopSearchHtml = "<span class='BRtoolbarSection BRtoolbarSectionSearch tc ph20 last'>"
       +         "<form class='booksearch desktop'>"
-      +           "<input type='search' class='textSrch form-control' name='textSrch' val='' placeholder='Search inside this book'/>"
+      +           "<input type='search' class='textSrch form-control' name='textSrch' val='' placeholder='Search inside this book   '/>"
       +           "<button type='submit' id='btnSrch' name='btnSrch'>"
       +              "<img src=\""+this.imagesBaseURL+"icon_search_button.svg\" />"
       +           "</button>"
@@ -144,7 +144,7 @@ full */
     +     "<span class='BRtoolbarRight'>"
 
     +       "<span class='BRtoolbarSection BRtoolbarSectionInfo tc ph10'>"
-    +         "<button class='BRicon info js-tooltip'></button>"
+    +         "<button class='BRicon info js-tooltip'></button>APPLE"
     +         "<button class='BRicon full_text js-tooltip'></buttion>"
     +         "<button class='BRicon share js-tooltip'></button>"
     +         readIcon
@@ -472,34 +472,61 @@ full */
    * Override the default toolbar, mostly the same but some icons such as
    * full text are added.
    */
-  IslandoraBookReader.prototype.initToolbar = function(mode, ui) {
-    if (ui == "embed") {
-      return; // No toolbar at top in embed mode
-    }
-    var readIcon = '';
-    if (!navigator.userAgent.match(/mobile/i)) {
-      readIcon = "<button class='BRicon read modal'></button>";
-    }
+    IslandoraBookReader.prototype.initToolbar = function (mode, ui) {
+        if (ui == "embed") {
+            return; // No toolbar at top in embed mode
+        }
+        var readIcon = '';
+        if (!navigator.userAgent.match(/mobile/i)) {
+            readIcon = "<button class='BRicon read modal'></button>";
+        }
+        desktopSearchHtml = "<span class='BRtoolbarSection BRtoolbarSectionSearch tc ph20 last'>"
+                + "<form class='booksearch desktop'>"
+                + "<input type='search' class='textSrch form-control' name='textSrch' val='' placeholder='Search inside this book   '/>"
+                + "<button type='submit' id='btnSrch' name='btnSrch'>"
+                + "<img src=\"" + this.imagesBaseURL + "icon_search_button.svg\" />"
+                + "</button>"
+                + "</form>"
+                + "</span>";
+        $("#BookReader").append(
+                "<div id='BRtoolbar' class='header fixed'>"
+                + "<span class='BRmobileHamburgerWrapper'>"
+                + "<span class=\"hamburger\"><a href=\"#BRmobileMenu\"></a></span>"
+                + "<span class=\"BRtoolbarMobileTitle\" title=\"\">" + this.bookTitle + "</span>"
+                + "</span>"
+                + "<span id='BRtoolbarbuttons' >"
+                + "<span class='BRtoolbarLeft'>"
+                + "<span class='BRtoolbarSection BRtoolbarSectionTitle title tl ph10 last'>"
+                + "<span id='BRreturn'><a></a></span>"
+                + "<div id='BRnavCntlTop' class='BRnabrbuvCntl'></div>"
+                + "</span>"
+                + "</span>"
+                + "<span class='BRtoolbarRight'>"
+                + "<span class='BRtoolbarSection BRtoolbarSectionInfo tc ph10'>"
+                + "<button class='BRicon info js-tooltip'></button>"
+                + "<button class='BRicon full_text js-tooltip'></buttion>"
+                + "<button class='BRicon share js-tooltip'></button>"
+                + readIcon
+                + "</span>"
 
-    $("#BookReader").append(
-      "<div id='BRtoolbar'>"
-        +   "<span id='BRtoolbarbuttons'>"
-        +     "<form  id='booksearch'><label class='element-invisible' for='textSrch'>" + Drupal.t('Text Search') + "</label><input type='search' id='textSrch' name='textSrch' placeholder='"
-        +     Drupal.t('Search inside')
-        +     "'/><button type='submit' id='btnSrch' name='btnSrch'>" + Drupal.t('GO') + "</button></form>"
-        +     "<button class='BRicon play'></button>"
-        +     "<button class='BRicon pause'></button>"
-        +     "<button class='BRicon info'></button>"
-        +     "<button class='BRicon full_text'></buttion>"
-        +     "<button class='BRicon full'></button>"
-        +     "<button class='BRicon share'></button>"
-        +     readIcon
-        +   "</span>"
-        +   "<span><a class='logo' href='" + this.logoURL + "'></a></span>"
-        +   "<span id='BRreturn'><a></a></span>"
-        +   "<div id='BRnavCntlTop' class='BRnabrbuvCntl'></div>"
-        + "</div>"
-    );
+                // zoom
+                + "<span class='BRtoolbarSection BRtoolbarSectionZoom tc ph10'>"
+                + "<button class='BRicon zoom_out js-tooltip'></button>"
+                + "<button class='BRicon zoom_in js-tooltip'></button>"
+                + "</span>"
+
+                // Search
+                + desktopSearchHtml
+
+                // enable fullscreen button
+                + "<button class='BRicon full'></button>"
+
+                + "</span>" // end BRtoolbarRight
+
+                + "</span>" // end desktop-only
+
+                + "</div>"
+            );
     // Attach submit handler to form.
     var that = this;
     $('#BRtoolbarbuttons > form').submit(function(event) {
